@@ -11,11 +11,13 @@ import {
   TextField,
   IconButton,
 } from "@mui/material";
-import { AccessTime, Settings, People } from "@mui/icons-material";
+import { AccessTime, Settings, People, PlayArrow } from "@mui/icons-material";
 import socket from "./socket";
 
 const App = () => {
   const [roomId, setRoomId] = useState("");
+  const [userStory, setUserStory] = useState("");
+  const [userDescription, setUserDescription] = useState("")
   const [username, setUsername] = useState("");
   const [participants, setParticipants] = useState([]);
   const [votes, setVotes] = useState({});
@@ -24,7 +26,7 @@ const App = () => {
   const [showVotes, setShowVotes] = useState(false);
   const [userVote, setUserVote] = useState(null);
   const [timer, setTimer] = useState(120);
-  const [isTimerRunning, setIsTimerRunning] = useState(true);
+  const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [averageVote, setAverageVote] = useState(null);
 
   useEffect(() => {
@@ -46,9 +48,10 @@ const App = () => {
     let countdown;
     if (isTimerRunning && timer > 0) {
       countdown = setInterval(() => {
-        setTimer((prevTimer) => prevTimer - 1);
+        setTimer((prevTimer) => prevTimer - 1);        
       }, 1000);
     } else {
+      revealVotes()
       clearInterval(countdown);
     }
     return () => clearInterval(countdown);
@@ -89,7 +92,18 @@ const App = () => {
       socket.emit("joinRoom", { roomId, user: username }, (response) => {
         if (response && response.success) {
           console.log(`User ${username} joined room ${roomId} successfully`);
-          socket.emit("getParticipants", { roomId });
+  
+          // Escuchar actualizaciones de participantes después de unirse a la sala exitosamente
+          socket.on("updateParticipants", (data) => {
+            console.log(data);
+            setParticipants(
+              Object.entries(data.participants).map(([name, status]) => ({
+                name,
+                status,
+              }))
+            );
+          });
+  
         } else {
           console.error(response ? response.message : 'No response from server');
         }
@@ -109,7 +123,7 @@ const App = () => {
     setShowVotes(false);
     setUserVote(null);
     setTimer(120); // Reset timer to 2 minutes
-    setIsTimerRunning(true); // Start timer again
+    setIsTimerRunning(false); // Start timer again
     setAverageVote(null); // Reset average vote
   };
 
@@ -139,11 +153,12 @@ const App = () => {
     // Revelar votos
     socket.on("votesRevealed", (data) => {
       setShowVotes(true);
-      setVotes(data);
+      setVotes(data.votes);
     });
 
     // Actualizar participantes
     socket.on("updateParticipants", (data) => {
+      console.log(data)
       setParticipants(
         Object.entries(data.participants).map(([name, status]) => ({
           name,
@@ -248,11 +263,29 @@ const App = () => {
                 <Card sx={{ borderRadius: "8px" }}>
                   <CardContent>
                     <Typography variant="subtitle1" fontWeight="bold">
-                      Historia de usuario a Votar: Acá iría la HU para votar 
+                      Historia de usuario:
                     </Typography>
-                    <Typography variant="body2">
-                      Esta sería la descripción, por ahora está quedamada en el código
+                    <TextField
+                      value={userStory} // Puedes cambiar esto por una nueva variable de estado, por ejemplo, `userStory`
+                      onChange={(e) => setUserStory(e.target.value)} // Cambia esta función por la función adecuada para el nuevo estado
+                      fullWidth
+                      variant="standard"
+                      placeholder="Escribe la historia de usuario aquí..."
+                      InputProps={{ disableUnderline: true }}
+                      sx={{ marginBottom: 2, fontSize: '1rem', fontWeight: 'bold' }}
+                    />
+                    <Typography variant="subtitle1" fontWeight="bold">
+                      Descripción:
                     </Typography>
+                    <TextField
+                      value={userDescription} // Puedes cambiar esto por una nueva variable de estado, por ejemplo, `userDescription`
+                      onChange={(e) => setUserDescription(e.target.value)} // Cambia esta función por la función adecuada para el nuevo estado
+                      fullWidth
+                      variant="standard"
+                      placeholder="Yo como usuario quisiera..."
+                      InputProps={{ disableUnderline: true }}
+                      sx={{ fontSize: '0.875rem' }}
+                    />
                   </CardContent>
                 </Card>
               </Grid>
@@ -286,7 +319,12 @@ const App = () => {
               {/* Timer and Reveal Button */}
               <Grid item xs={12} sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <AccessTime sx={{ marginRight: 1 }} />
-                <Typography variant="h6">{Math.floor(timer / 60)}:{(timer % 60).toString().padStart(2, '0')}</Typography>
+                <Typography variant="h6">
+                  {Math.floor(timer / 60)}:{(timer % 60).toString().padStart(2, '0')}
+                </Typography>
+                <IconButton onClick={() => setIsTimerRunning(true)} sx={{ marginLeft: 2 }}>
+                  <PlayArrow /> {/* Puedes cambiar el ícono por otro que prefieras, por ejemplo, PlayArrow */}
+                </IconButton>
                 <Button variant="contained" color="primary" sx={{ marginLeft: 3, borderRadius: "8px" }} onClick={revealVotes}>
                   Revelar Cartas
                 </Button>
@@ -322,7 +360,7 @@ const App = () => {
                           variant="caption"
                           sx={{
                             background:
-                              participant.status === "voted"
+                              participant.status === "Ha votado"
                                 ? "#4CAF50"
                                 : participant.status === "voting"
                                 ? "#FFC107"
@@ -361,8 +399,13 @@ const App = () => {
                         placeholder="Deja un mensaje"
                         fullWidth
                         sx={{ borderRadius: "8px" }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            sendMessage();
+                          }
+                        }}
                       />
-                      <Button onClick={sendMessage} sx={{ borderRadius: "8px" }}>Send</Button>
+                      {/*<Button onClick={sendMessage} sx={{ borderRadius: "8px" }}>Enviar</Button>*/}
                     </Box>
                   </CardContent>
                 </Card>
