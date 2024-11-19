@@ -31,7 +31,7 @@ const App = () => {
 
   useEffect(() => {
     socket.on("connect", () => {
-      console.log("Connected to WebSocket server with ID:", socket.id);
+      //console.log("Connected to WebSocket server with ID:", socket.id);
     });
 
     socket.on("connect_error", (error) => {
@@ -86,14 +86,10 @@ const App = () => {
     }
   };
 
-  // Unirse a una sala
   const joinRoom = () => {
     if (roomId && username) {
       socket.emit("joinRoom", { roomId, user: username }, (response) => {
         if (response && response.success) {
-          console.log(`User ${username} joined room ${roomId} successfully`);
-  
-          // Escuchar actualizaciones de participantes después de unirse a la sala exitosamente
           socket.on("updateParticipants", (data) => {
             console.log(data);
             setParticipants(
@@ -158,7 +154,6 @@ const App = () => {
 
     // Actualizar participantes
     socket.on("updateParticipants", (data) => {
-      console.log(data)
       setParticipants(
         Object.entries(data.participants).map(([name, status]) => ({
           name,
