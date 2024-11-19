@@ -78,7 +78,6 @@ const App = () => {
     if (roomId) {
       socket.emit("createRoom", { roomId }, (response) => {
         if (response && response.success) {
-          console.log(`Room ${roomId} created successfully`);
         } else {
           console.error(response ? response.message : 'No response from server');
         }
@@ -135,7 +134,7 @@ const App = () => {
       const newMessage = { user: username, message };
       socket.emit("sendMessage", { roomId, user: username, message }, (response) => {
         if (response && response.success) {
-          console.log('Message sent successfully');
+
         } else {
           console.error('Failed to send message');
         }
@@ -184,7 +183,6 @@ const App = () => {
     // Actualizar chat
     socket.on("updateChat", (data) => {      
       if (data) {
-        console.log(data)
         setChat((prevChat) => [...prevChat, ...data.filter(msg => !prevChat.some(prevMsg => prevMsg.message === msg.message && prevMsg.user === msg.user))]);
       }
     });
