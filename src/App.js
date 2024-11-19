@@ -91,7 +91,7 @@ const App = () => {
       socket.emit("joinRoom", { roomId, user: username }, (response) => {
         if (response && response.success) {
           socket.on("updateParticipants", (data) => {
-            console.log(data);
+
             setParticipants(
               Object.entries(data.participants).map(([name, status]) => ({
                 name,
